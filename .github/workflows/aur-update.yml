@@ -1,0 +1,56 @@
+name: Update AUR package
+
+# Checks the upstream release page daily, rebuilds herta-bin when a new AppImage
+# appears, and pushes the result to the AUR. Can also be run by hand from the
+# Actions tab (set dry_run to stop after the verification build).
+#
+# Needs one repository secret:
+#   AUR_SSH_PRIVATE_KEY - private key registered to the AUR account (AnRan)
+
+on:
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build and verify only; do not commit or push
+        type: boolean
+        default: false
+
+concurrency:
+  group: aur-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    steps:
+      - name: Install tooling
+        run: |
+          pacman -Syu --noconfirm --needed archlinux-keyring
+          pacman -S --noconfirm --needed git nodejs openssh jq
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install the AUR SSH key
+        if: ${{ !inputs.dry_run }}
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          install -dm700 "$HOME/.ssh"
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > "$HOME/.ssh/aur"
+          chmod 600 "$HOME/.ssh/aur"
+          ssh-keyscan -H aur.archlinux.org >> "$HOME/.ssh/known_hosts" 2>/dev/null
+
+      - name: Detect, rebuild and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: bash .github/scripts/aur-update.sh
