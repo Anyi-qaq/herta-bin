@@ -123,7 +123,7 @@ git add PKGBUILD .SRCINFO
 git commit -q -m "herta-bin ${new_ver}-${new_rel}" -m "Automated update: ${reason}."
 
 log "pushing to the GitHub mirror"
-git push -q origin HEAD:master
+git push -q origin HEAD:refs/heads/master
 
 log "pushing to the AUR"
 [ -f "$AUR_SSH_KEY" ] || die "AUR SSH key not found at $AUR_SSH_KEY"
@@ -146,6 +146,6 @@ args=()
 [ -n "$parent" ] && args=(-p "$parent")
 aur_commit=$(git commit-tree "$aur_tree" "${args[@]}" \
   -m "herta-bin ${new_ver}-${new_rel}" -m "Automated update: ${reason}.")
-git push aur "${aur_commit}:master"
+git push aur "${aur_commit}:refs/heads/master"
 
 log "published herta-bin ${new_ver}-${new_rel}"

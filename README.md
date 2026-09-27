@@ -59,7 +59,7 @@ or reproduce its push:
 git fetch aur master
 tree=$(git ls-tree "$(git rev-parse 'HEAD^{tree}')" | sed $'/\t\.github$/d' | git mktree)
 commit=$(git commit-tree "$tree" -p "$(git rev-parse FETCH_HEAD)" -m "herta-bin <version>")
-git push aur "$commit:master"
+git push aur "$commit:refs/heads/master"
 ```
 
 A plain `git push origin master` is still the way to update this mirror.
